@@ -1,6 +1,6 @@
 # Shared Transition Orchestrator
 
-A helper library for react-native-shared-element. Works as a standalone animator or can be coupled with any navigation library.
+A helper library for [react-native-shared-element](https://github.com/IjzerenHein/react-native-shared-element). Works as a standalone animator or can be coupled with any navigation library.
 
 # How it works
 
