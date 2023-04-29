@@ -21,10 +21,13 @@ Wraps the views you want to animate between scenes.
 When new scene becomes active, orchestrator will check if there are matching shared elements (by ids) between new scene and previously active scene. For each found element it will create a transition. Additionally the scenes can also animate themselves during element transition (e.g. fade in, slide out, etc). When scene is deactivated ( isActive={false} ), orchestrator will try to find the previously active scene, and do the same process.
 
 Elements ids can be set dynamically, e.g. a gallery masonry view and a fullscreen carousel view contain same images, but you only want to animate the one that was tapped - set the id of unwanted images to some dummy string that doesn't exist in the previous scene.
+
 # How to use /// WIP
 
 ## With navigator
+
 Note: SharedTransitionScene and SharedTransitionElement are Views and should be styled accordingly (omitted here)
+
 ```
 const App = () => {
   return (
@@ -51,7 +54,7 @@ const GalleryScreen = () => {
       <ScrollView>
         {media.map(mediaUrl => {
           return (
-            <Touchable 
+            <Touchable
               onPress={() => Navigation.goToMediaViewer(mediaUrl)}
             >
               <SharedTransitionElement id={mediaUrl}>
@@ -74,7 +77,7 @@ const MediaViewerScreen = () => {
 
   return (
     <SharedTransitionScene isActive={isFocused}>
-      <Touchable 
+      <Touchable
         onPress={Navigation.goBack}
       >
         <SharedTransitionElement id={mediaUrl}>
@@ -90,7 +93,7 @@ const MediaViewerScreen = () => {
 
 ```
 const App = () => {
-  ... 
+  ...
   return (
       <SharedTransitionOrchestrator>
         <Gallery .../>
@@ -125,8 +128,8 @@ const MediaViewer = () => {
   }
 
   return (
-    <SharedTransitionScene 
-      animateScene
+    <SharedTransitionScene
+      sceneInterpolator={(progress) => ({ opacity: progress })}
       isActive={isActive}
       style={{
         backgroundColor: 'black',

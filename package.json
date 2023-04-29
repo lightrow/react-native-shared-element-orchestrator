@@ -37,8 +37,5 @@
 	"bugs": {
 		"url": "https://github.com/lightrow/react-native-shared-element-orchestrator/issues"
 	},
-	"homepage": "https://github.com/lightrow/react-native-shared-element-orchestrator#readme",
-	"dependencies": {
-		"react-native-shared-element-orchestrator": "^1.0.0"
-	}
+	"homepage": "https://github.com/lightrow/react-native-shared-element-orchestrator#readme"
 }

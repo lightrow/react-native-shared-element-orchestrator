@@ -1,4 +1,4 @@
-import {
+import React, {
 	FC,
 	ReactNode,
 	useCallback,
@@ -19,7 +19,9 @@ interface ISharedElementSceneProps {
 	containerStyle?: StyleProp<ViewStyle>;
 	isActive?: boolean;
 	id?: string;
-	animateScene?: boolean;
+	sceneInterpolator?: (
+		progress: Animated.AnimatedInterpolation<number>
+	) => Animated.AnimatedProps<ViewStyle>;
 }
 
 const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
@@ -28,7 +30,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 	containerStyle,
 	isActive,
 	id: propId,
-	animateScene,
+	sceneInterpolator,
 }) => {
 	const ancestorRef = useRef<SharedElementNode | null>(null);
 	const elementsRef = useRef<ISharedTransitionElement[]>([]);
@@ -39,6 +41,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 		onSceneDestroyed,
 		onSceneActivated,
 		onSceneDeactivated,
+		activeScenesIds,
 		transitions,
 	} = useSharedTransition();
 
@@ -115,20 +118,8 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 		<SharedElement onNode={onAncestorNodeChanged} style={[style]}>
 			<Animated.View
 				style={[
-					startTransition &&
-						animateScene && {
-							opacity: startTransition.progress.interpolate({
-								inputRange: [0, 1],
-								outputRange: [0, 1],
-							}),
-						},
-					endTransition &&
-						animateScene && {
-							opacity: endTransition.progress.interpolate({
-								inputRange: [0, 1],
-								outputRange: [0, 1],
-							}),
-						},
+					startTransition && sceneInterpolator?.(startTransition.progress),
+					endTransition && sceneInterpolator?.(endTransition.progress),
 					containerStyle,
 				]}
 			>
