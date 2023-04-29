@@ -1,7 +1,44 @@
 {
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-native": "^0.71.7",
-    "react-native-shared-element": "^0.8.8"
-  }
+	"peerDependencies": {
+		"react": "^18.2.0",
+		"react-native": "^0.71.7",
+		"react-native-shared-element": "^0.8.8"
+	},
+	"devDependencies": {
+		"@types/react": "^18.2.0",
+		"@types/react-native": "^0.71.6",
+		"typescript": "^5.0.4"
+	},
+	"name": "react-native-shared-element-orchestrator",
+	"description": "A helper library for react-native-shared-element. Works as a standalone animator or can be coupled with any navigation library.",
+	"version": "1.0.0",
+	"main": "build/index.js",
+	"files": [
+		"build/**/*"
+	],
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc --project ./tsconfig.json",
+		"pub": "npm version patch && publish --registry http://localhost:4873/"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lightrow/react-native-shared-element-orchestrator.git"
+	},
+	"keywords": [
+		"shared element",
+		"shared layout",
+		"animation",
+		"transition",
+		"react native"
+	],
+	"author": "Ivan D. Gromov",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/lightrow/react-native-shared-element-orchestrator/issues"
+	},
+	"homepage": "https://github.com/lightrow/react-native-shared-element-orchestrator#readme",
+	"dependencies": {
+		"react-native-shared-element-orchestrator": "^1.0.0"
+	}
 }
