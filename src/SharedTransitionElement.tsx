@@ -5,16 +5,15 @@ import { useSharedTransitionScene } from './SharedTransitionSceneContext';
 
 interface ISharedTransitionElementProps {
 	children: ReactNode;
+	id: string;
 	style?: StyleProp<ViewStyle>;
-	id?: string;
 }
 
 const SharedTransitionElement: FC<ISharedTransitionElementProps> = ({
 	children,
+	id,
 	style,
-	id: propId,
 }) => {
-	const id = propId || useId();
 	const { onElementDestroyed, onElementUpdated } = useSharedTransitionScene();
 	const nodeRef = useRef<SharedElementNode | null>(null);
 

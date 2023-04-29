@@ -35,7 +35,6 @@ export interface ISharedTransitionContext {
 
 	scenes: ISharedTransitionScene[];
 	transitions: ISharedTransition[];
-	activeScenesIds: ISharedTransitionScene['id'][];
 }
 
 export interface ISharedTransitionSceneContext {

@@ -4,92 +4,49 @@ A helper library for react-native-shared-element. Works as a standalone animator
 
 # How it works
 
-### SharedTransitionOrchestrator
+When new scene becomes active, orchestrator will check if there are matching shared elements (by ids) between new scene and previously active scene. For each found element it will create a transition. Additionally the scenes can animate themselves during scene transition (using `sceneInterpolator` prop). When scene is deactivated, orchestrator will try to find the previously active scene, and repeat the same process.
+<br>
+<br>
 
-Provides context for scenes, observes scenes changes, renders transitions between scenes
+### `SharedTransitionOrchestrator`
 
-### SharedTransitionScene
+Provides context for scenes, observes scenes changes, renders transitions between scenes. By default it stretches to parent container, as it is meant to be inserted somewhere at the root app level, but it can also be placed somewhere else and styled accordingly.
 
-Provides scene state for elements, observes elements changes, optionally animates itself during scene transitions
+| `Props`            |                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `style?`           | _default_ **`{...StyleSheet.absoluteFillObject, zIndex: 99999999}`**             |
+| `duration?`        | _default_ **`500`**<br> Scene transition duration.                               |
+| `easing?`          | _default_ **`Easing.out(Easing.exp)`**<br>Scene transition easing function.      |
+| `useNativeDriver?` | _default_ **`true`**<br> Change to false if your style interpolators require it. |
 
-### SharedTransitionElement
+<br>
+
+### `SharedTransitionScene`
+
+Provides context for elements, observes elements changes, optionally animates itself during scene transitions
+
+| `SharedTransitionScene Props` |                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `style?`                      | _default_ **`undefined`**<br> Outer View style.                                                                                                                                                                                                                                                                                                                                                                     |
+| `containerStyle?`             | _default_ **`undefined`**<br> Inner View style, `sceneInterpolator` applies to this one.                                                                                                                                                                                                                                                                                                                            |
+| `isActive?`                   | _default_ **`undefined`**<br><br> `true` - Scene is added to the top of the active scenes stack.<br>`false` - Scene is removed from the active scenes stack.<br><br> Changing this value will trigger Orchestrator search for previous scene and matching elements to run transitions. Normally this stays `true` for all Scenes, and is flipped to `false` before Scene is unmounted to trigger reverse animations |
+| `id?  `                       | _default_ **`undefined`**<br> ID of the scene. Auto-generated if undefined.                                                                                                                                                                                                                                                                                                                                         |
+| `sceneInterpolator?`          | _default_ **`undefined`**<br>Allows animating Scene transitions, e.g: <br> `sceneInterpolator={(progress) => ({ opacity: progress })}`                                                                                                                                                                                                                                                                              |
+
+<br>
+
+### `SharedTransitionElement`
 
 Wraps the views you want to animate between scenes.
 
-### Process
+| `Props`  |                                                              |
+| -------- | ------------------------------------------------------------ |
+| `id`     | _required_ <br> ID used for matching Elements between Scenes |
+| `style?` | _default_ **`undefined`**<br> View style.                    |
 
-When new scene becomes active, orchestrator will check if there are matching shared elements (by ids) between new scene and previously active scene. For each found element it will create a transition. Additionally the scenes can also animate themselves during element transition (e.g. fade in, slide out, etc). When scene is deactivated ( isActive={false} ), orchestrator will try to find the previously active scene, and do the same process.
-
-Elements ids can be set dynamically, e.g. a gallery masonry view and a fullscreen carousel view contain same images, but you only want to animate the one that was tapped - set the id of unwanted images to some dummy string that doesn't exist in the previous scene.
+<br>
 
 # How to use /// WIP
-
-## With navigator
-
-Note: SharedTransitionScene and SharedTransitionElement are Views and should be styled accordingly (omitted here)
-
-```
-const App = () => {
-  return (
-    <...>
-      <SharedTransitionOrchestrator>
-        <SomeNavigator/>
-      </SharedTransitionOrchestrator>
-    <...>
-  )
-}
-
-const SomeNavigator = () => {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name="GalleryScreen" component={GalleryScreen}/>
-      <Stack.Screen name="MediaViewerScreen" component={MediaViewerScreen}/>
-    </Stack.Navigator>
-  )
-}
-
-const GalleryScreen = () => {
-  return (
-    <SharedTransitionScene isActive>
-      <ScrollView>
-        {media.map(mediaUrl => {
-          return (
-            <Touchable
-              onPress={() => Navigation.goToMediaViewer(mediaUrl)}
-            >
-              <SharedTransitionElement id={mediaUrl}>
-                <Image src={{ uri: mediaUrl }}>
-              </SharedTransitionElement>
-            </Touchable>
-          )
-        })}
-      </ScrollView>
-    </SharedTransitionScene>
-  )
-}
-
-const MediaViewerScreen = () => {
-  const isFocused = useIsFocused();
-
-  const {
-    params: { mediaUrl },
-  } = useRoute()
-
-  return (
-    <SharedTransitionScene isActive={isFocused}>
-      <Touchable
-        onPress={Navigation.goBack}
-      >
-        <SharedTransitionElement id={mediaUrl}>
-          <Image src={{ uri: mediaUrl }}>
-        </SharedTransitionElement>
-      </Touchable>
-    </SharedTransitionScene>
-  )
-}
-```
-
-## Without navigator (with scene animation)
 
 ```
 const App = () => {
@@ -143,3 +100,5 @@ const MediaViewer = () => {
   )
 }
 ```
+
+Usage with navigation libraries is also possible. Scenes can be placed inside screens, and `sceneInterpolator` can be left empty. `isActive` can then be toggled off when the screen is being popped out of the screen stack, e.g. *`beforeRemove`* event in React Navigation

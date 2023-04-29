@@ -41,7 +41,6 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 		onSceneDestroyed,
 		onSceneActivated,
 		onSceneDeactivated,
-		activeScenesIds,
 		transitions,
 	} = useSharedTransition();
 
@@ -76,7 +75,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 		updateScene();
 	};
 
-	const updateScene = () => {
+	const updateScene = useCallback(() => {
 		if (!ancestorRef.current) {
 			onSceneDestroyed(id);
 			return;
@@ -86,7 +85,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 			elements: elementsRef.current,
 			id,
 		});
-	};
+	}, [onSceneUpdated, onSceneDestroyed]);
 
 	useEffect(() => {
 		if (isActive) {
@@ -110,6 +109,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = ({
 	const startTransition = transitions.find(
 		(transitions) => transitions.start.sceneId === id
 	)?.start;
+
 	const endTransition = transitions.find(
 		(transitions) => transitions.end.sceneId === id
 	)?.end;

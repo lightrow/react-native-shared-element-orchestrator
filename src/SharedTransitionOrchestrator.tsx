@@ -1,15 +1,38 @@
-import { FC, ReactNode, useCallback, useState } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react';
+import {
+	Animated,
+	Easing,
+	EasingFunction,
+	InteractionManager,
+	StyleProp,
+	StyleSheet,
+	View,
+	ViewStyle,
+} from 'react-native';
 import { SharedElementTransition } from 'react-native-shared-element';
-import { ISharedTransition, ISharedTransitionScene } from './model';
+
+import {
+	ISharedTransition,
+	ISharedTransitionContext,
+	ISharedTransitionScene,
+} from './model';
 import SharedTransitionContext from './SharedTransitionContext';
+import { useUpdatedRef } from './utils/hooks';
 
 export interface ISharedTransitionOrchestratorProps {
 	children: ReactNode;
+	style?: StyleProp<ViewStyle>;
+	duration?: number;
+	easing?: EasingFunction;
+	useNativeDriver?: boolean;
 }
 
 const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	children,
+	style,
+	duration = 500,
+	easing = Easing.out(Easing.exp),
+	useNativeDriver = true,
 }) => {
 	const [state, setState] = useState<{
 		scenes: ISharedTransitionScene[];
@@ -20,6 +43,15 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 		transitions: [],
 		activeScenesIds: [],
 	});
+
+	const animationConfig = useUpdatedRef(
+		{
+			duration,
+			easing,
+			useNativeDriver,
+		},
+		[duration, easing, useNativeDriver]
+	);
 
 	const onSceneDestroyed = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
@@ -137,12 +169,12 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				}
 			});
 
+			const interaction = InteractionManager.createInteractionHandle();
 			Animated.timing(progress, {
 				toValue: 1,
-				useNativeDriver: true,
-				duration: 500,
-				easing: Easing.out(Easing.exp),
+				...animationConfig.current,
 			}).start(() => {
+				InteractionManager.clearInteractionHandle(interaction);
 				setState((state) => ({ ...state, transitions: [] }));
 			});
 
@@ -151,22 +183,29 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 		[]
 	);
 
+	const context: ISharedTransitionContext = useMemo(() => {
+		return {
+			onSceneActivated,
+			onSceneDeactivated,
+			onSceneDestroyed,
+			onSceneUpdated,
+			scenes: state.scenes,
+			transitions: state.transitions,
+		};
+	}, [
+		onSceneActivated,
+		onSceneDeactivated,
+		onSceneDestroyed,
+		onSceneUpdated,
+		state.scenes,
+		state.transitions,
+	]);
+
 	return (
-		<SharedTransitionContext.Provider
-			value={{
-				...state,
-				onSceneUpdated,
-				onSceneDestroyed,
-				onSceneActivated,
-				onSceneDeactivated,
-			}}
-		>
+		<SharedTransitionContext.Provider value={context}>
 			{children}
 			{!!state.transitions.length && (
-				<View
-					style={[StyleSheet.absoluteFillObject, { zIndex: 9999999999 }]}
-					pointerEvents='box-only'
-				>
+				<View style={[styles.container, style]} pointerEvents='box-only'>
 					{state.transitions.map((transition) => (
 						<SharedElementTransition
 							start={{
@@ -188,5 +227,12 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 		</SharedTransitionContext.Provider>
 	);
 };
+
+const styles = StyleSheet.create({
+	container: {
+		...StyleSheet.absoluteFillObject,
+		zIndex: 99999999,
+	},
+});
 
 export default SharedTransitionOrchestrator;
