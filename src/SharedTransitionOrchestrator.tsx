@@ -204,27 +204,26 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	return (
 		<SharedTransitionContext.Provider value={context}>
 			{children}
-			{!!state.transitions.length && (
-				<View style={[styles.container, style]} pointerEvents='box-only'>
-					{state.transitions.map((transition) => (
-						<SharedElementTransition
-							start={{
-								node: transition.start.node,
-								ancestor: transition.start.ancestor,
-							}}
-							end={{
-								node: transition.end.node,
-								ancestor: transition.end.ancestor,
-							}}
-							position={transition.end.progress}
-							key={transition.start.sceneId + transition.end.sceneId}
-							animation='move'
-							resize='auto'
-							align='auto'
-						/>
-					))}
-				</View>
-			)}
+			{!!state.transitions.length &&
+				state.transitions.map((transition) => (
+					<SharedElementTransition
+						style={[styles.container, style]}
+						start={{
+							node: transition.start.node,
+							ancestor: transition.start.ancestor,
+						}}
+						end={{
+							node: transition.end.node,
+							ancestor: transition.end.ancestor,
+						}}
+						position={transition.end.progress}
+						key={transition.start.sceneId + transition.end.sceneId}
+						animation='move'
+						resize='auto'
+						align='auto'
+					/>
+				))}
+			{!!state.transitions.length && <View style={styles.touchBlocker} />}
 		</SharedTransitionContext.Provider>
 	);
 };
@@ -234,6 +233,8 @@ const styles = StyleSheet.create({
 		...StyleSheet.absoluteFillObject,
 		zIndex: 99999999,
 	},
+	// disabling touch on SharedElementTransition or its parent has buggy behaviour when finger is held down
+	touchBlocker: { ...StyleSheet.absoluteFillObject, zIndex: 99999999 },
 });
 
 export default SharedTransitionOrchestrator;
