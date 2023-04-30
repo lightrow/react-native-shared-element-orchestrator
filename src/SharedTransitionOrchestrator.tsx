@@ -217,6 +217,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 								ancestor: transition.end.ancestor,
 							}}
 							position={transition.end.progress}
+							key={transition.start.sceneId + transition.end.sceneId}
 							animation='move'
 							resize='auto'
 							align='auto'
