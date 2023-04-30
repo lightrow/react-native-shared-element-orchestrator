@@ -1,4 +1,4 @@
-import { FC, ReactNode, useEffect, useId, useRef } from 'react';
+import { FC, ReactNode, memo, useEffect, useId, useRef } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import { SharedElement, SharedElementNode } from 'react-native-shared-element';
 import { useSharedTransitionScene } from './SharedTransitionSceneContext';
@@ -9,44 +9,42 @@ interface ISharedTransitionElementProps {
 	style?: StyleProp<ViewStyle>;
 }
 
-const SharedTransitionElement: FC<ISharedTransitionElementProps> = ({
-	children,
-	id,
-	style,
-}) => {
-	const { onElementDestroyed, onElementUpdated } = useSharedTransitionScene();
-	const nodeRef = useRef<SharedElementNode | null>(null);
+const SharedTransitionElement: FC<ISharedTransitionElementProps> = memo(
+	({ children, id, style }) => {
+		const { onElementDestroyed, onElementUpdated } = useSharedTransitionScene();
+		const nodeRef = useRef<SharedElementNode | null>(null);
 
-	useEffect(() => {
-		if (!nodeRef.current) {
-			return;
-		}
-		onElementUpdated({
-			id,
-			node: nodeRef.current,
-		});
-		return () => {
-			onElementDestroyed(id);
-		};
-	}, [id]);
-
-	const onNodeChanged = (node: SharedElementNode | null) => {
-		if (!node) {
-			onElementDestroyed(id);
-		} else {
-			nodeRef.current = node;
+		useEffect(() => {
+			if (!nodeRef.current) {
+				return;
+			}
 			onElementUpdated({
 				id,
-				node,
+				node: nodeRef.current,
 			});
-		}
-	};
+			return () => {
+				onElementDestroyed(id);
+			};
+		}, [id]);
 
-	return (
-		<SharedElement onNode={onNodeChanged} style={style}>
-			{children}
-		</SharedElement>
-	);
-};
+		const onNodeChanged = (node: SharedElementNode | null) => {
+			if (!node) {
+				onElementDestroyed(id);
+			} else {
+				nodeRef.current = node;
+				onElementUpdated({
+					id,
+					node,
+				});
+			}
+		};
+
+		return (
+			<SharedElement onNode={onNodeChanged} style={style}>
+				{children}
+			</SharedElement>
+		);
+	}
+);
 
 export default SharedTransitionElement;

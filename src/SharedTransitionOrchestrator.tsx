@@ -1,4 +1,11 @@
-import React, { FC, ReactNode, useCallback, useMemo, useState } from 'react';
+import React, {
+	FC,
+	ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from 'react';
 import {
 	Animated,
 	Easing,
@@ -27,6 +34,12 @@ export interface ISharedTransitionOrchestratorProps {
 	useNativeDriver?: boolean;
 }
 
+interface IState {
+	scenes: Record<ISharedTransitionScene['id'], ISharedTransitionScene>;
+	transitions: ISharedTransition[];
+	activeScenesIds: Array<ISharedTransitionScene['id']>;
+}
+
 const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	children,
 	style,
@@ -34,12 +47,8 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	easing = Easing.out(Easing.exp),
 	useNativeDriver = true,
 }) => {
-	const [state, setState] = useState<{
-		scenes: ISharedTransitionScene[];
-		transitions: ISharedTransition[];
-		activeScenesIds: Array<ISharedTransitionScene['id']>;
-	}>({
-		scenes: [],
+	const [state, setState] = useState<IState>({
+		scenes: {},
 		transitions: [],
 		activeScenesIds: [],
 	});
@@ -55,88 +64,110 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 
 	const onSceneDestroyed = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
-			setState((state) => {
-				const sceneIdx = state.scenes.findIndex(
-					(stateScene) => stateScene.id === sceneId
+			setState((prevState) => {
+				const state = { ...prevState, scenes: { ...prevState.scenes } };
+				delete state.scenes[sceneId];
+				state.activeScenesIds = state.activeScenesIds.filter(
+					(activeSceneId) => activeSceneId !== sceneId
 				);
-				if (sceneIdx === -1) {
-					return state;
-				}
-				const updatedScenes = [...state.scenes];
-				updatedScenes.splice(sceneIdx, 1);
-				return {
-					...state,
-					scenes: updatedScenes,
-					activeScenesIds: state.activeScenesIds.filter(
-						(activeSceneId) => activeSceneId !== sceneId
-					),
-				};
+				return state;
 			});
 		},
 		[]
 	);
 
 	const onSceneUpdated = useCallback((scene: ISharedTransitionScene) => {
-		setState((state) => {
-			const sceneIdx = state.scenes.findIndex(
-				(stateScene) => stateScene.id === scene.id
-			);
-			const updatedScenes = [...state.scenes];
-			if (sceneIdx === -1) {
-				updatedScenes.push(scene);
+		setState((prevState) => {
+			if (scene.isActive && !prevState.activeScenesIds.includes(scene.id)) {
+				return activateScene(scene, prevState);
+			} else if (
+				!scene.isActive &&
+				prevState.activeScenesIds.includes(scene.id)
+			) {
+				return deactivateScene(scene, prevState);
 			} else {
-				updatedScenes[sceneIdx] = scene;
+				return {
+					...prevState,
+					scenes: {
+						...prevState.scenes,
+						[scene.id]: { ...prevState.scenes[scene.id], ...scene },
+					},
+				};
 			}
-			return {
-				...state,
-				scenes: updatedScenes,
-			};
 		});
 	}, []);
 
-	const onSceneActivated = useCallback(
-		(sceneId: ISharedTransitionScene['id']) => {
-			setState((state) => {
-				const prevScene = state.scenes.find(
-					(scene) =>
-						scene.id === state.activeScenesIds[state.activeScenesIds.length - 1]
-				);
-				const nextScene = state.scenes.find((scene) => scene.id === sceneId);
-				const transitions =
-					prevScene && nextScene && runTransitions(prevScene, nextScene);
+	const activateScene = useCallback(
+		(scene: ISharedTransitionScene, prevState: IState) => {
+			const state = {
+				...prevState,
+				scenes: { ...prevState.scenes },
+				activeScenesIds: [...prevState.activeScenesIds, scene.id],
+			};
 
-				return {
-					...state,
-					...(transitions && { transitions }),
-					activeScenesIds: [...state.activeScenesIds, sceneId],
-				};
-			});
+			const nextScene = scene;
+			const prevScene =
+				state.scenes[
+					prevState.activeScenesIds[prevState.activeScenesIds.length - 1]
+				];
+
+			if (prevScene) {
+				const { progress, transitions } = runTransitions(prevScene, nextScene);
+				prevScene.progress = Animated.subtract(1, progress);
+				nextScene.progress = progress;
+				state.scenes[prevScene.id] = prevScene;
+				state.scenes[nextScene.id] = nextScene;
+				state.transitions = transitions;
+			} else {
+				const animation = new Animated.Value(0);
+				nextScene.progress = animation;
+				state.scenes[scene.id] = nextScene;
+				Animated.timing(animation, {
+					...animationConfig.current,
+					toValue: 1,
+				}).start();
+			}
+
+			return { ...state };
 		},
 		[]
 	);
 
-	const onSceneDeactivated = useCallback(
-		(sceneId: ISharedTransitionScene['id']) => {
-			setState((state) => {
-				const prevScene = state.scenes.find(
-					(scene) =>
-						scene.id === state.activeScenesIds[state.activeScenesIds.length - 1]
-				);
-				const nextScene = state.scenes.find(
-					(scene) =>
-						scene.id === state.activeScenesIds[state.activeScenesIds.length - 2]
-				);
-				const transitions =
-					prevScene && nextScene && runTransitions(prevScene, nextScene);
+	const deactivateScene = useCallback(
+		(scene: ISharedTransitionScene, prevState: IState) => {
+			const state = {
+				...prevState,
+				scenes: { ...prevState.scenes },
+				activeScenesIds: prevState.activeScenesIds.filter(
+					(activeSceneId) => activeSceneId !== scene.id
+				),
+			};
 
-				return {
-					...state,
-					...(transitions && { transitions }),
-					activeScenesIds: state.activeScenesIds.filter(
-						(activeSceneId) => activeSceneId !== sceneId
-					),
-				};
-			});
+			const prevScene = scene;
+			const prevSceneIdx = prevState.activeScenesIds.findIndex(
+				(id) => id === scene.id
+			);
+			const nextScene =
+				state.scenes[prevState.activeScenesIds[prevSceneIdx - 1]];
+
+			if (nextScene) {
+				const { progress, transitions } = runTransitions(prevScene, nextScene);
+				prevScene.progress = Animated.subtract(1, progress);
+				nextScene.progress = progress;
+				state.scenes[prevScene.id] = prevScene;
+				state.scenes[nextScene.id] = nextScene;
+				state.transitions = transitions;
+			} else {
+				const animation = new Animated.Value(1);
+				prevScene.progress = animation;
+				state.scenes[prevScene.id] = prevScene;
+				Animated.timing(animation, {
+					...animationConfig.current,
+					toValue: 0,
+				}).start();
+			}
+
+			return state;
 		},
 		[]
 	);
@@ -156,15 +187,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 						start: {
 							ancestor: prevScene.ancestor,
 							node: prevSceneElement.node,
-							progress: Animated.subtract(1, progress),
 							sceneId: prevScene.id,
 						},
 						end: {
 							ancestor: nextScene.ancestor,
 							node: nextSceneMatchingElement.node,
-							progress: progress,
 							sceneId: nextScene.id,
 						},
+						progress,
 					});
 				}
 			});
@@ -178,28 +208,18 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				setState((state) => ({ ...state, transitions: [] }));
 			});
 
-			return transitions;
+			return { transitions, progress };
 		},
 		[]
 	);
 
 	const context: ISharedTransitionContext = useMemo(() => {
 		return {
-			onSceneActivated,
-			onSceneDeactivated,
 			onSceneDestroyed,
 			onSceneUpdated,
 			scenes: state.scenes,
-			transitions: state.transitions,
 		};
-	}, [
-		onSceneActivated,
-		onSceneDeactivated,
-		onSceneDestroyed,
-		onSceneUpdated,
-		state.scenes,
-		state.transitions,
-	]);
+	}, [onSceneDestroyed, onSceneUpdated, state.scenes]);
 
 	return (
 		<SharedTransitionContext.Provider value={context}>
@@ -216,7 +236,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 							node: transition.end.node,
 							ancestor: transition.end.ancestor,
 						}}
-						position={transition.end.progress}
+						position={transition.progress}
 						key={transition.start.sceneId + transition.end.sceneId}
 						animation='move'
 						resize='auto'

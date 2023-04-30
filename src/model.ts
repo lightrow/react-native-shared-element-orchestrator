@@ -5,21 +5,22 @@ export interface ISharedTransition {
 	start: {
 		node: SharedElementNode;
 		ancestor: SharedElementNode;
-		progress: Animated.AnimatedInterpolation<number>;
 		sceneId: ISharedTransitionScene['id'];
 	};
 	end: {
 		node: SharedElementNode;
 		ancestor: SharedElementNode;
-		progress: Animated.Value;
 		sceneId: ISharedTransitionScene['id'];
 	};
+	progress: Animated.AnimatedInterpolation<number>;
 }
 
 export interface ISharedTransitionScene {
 	id: string;
 	elements: ISharedTransitionElement[];
 	ancestor: SharedElementNode;
+	isActive: boolean;
+	progress: Animated.AnimatedInterpolation<number>;
 }
 
 export interface ISharedTransitionElement {
@@ -30,11 +31,8 @@ export interface ISharedTransitionElement {
 export interface ISharedTransitionContext {
 	onSceneUpdated: (scene: ISharedTransitionScene) => void;
 	onSceneDestroyed: (sceneId: ISharedTransitionScene['id']) => void;
-	onSceneActivated: (sceneId: ISharedTransitionScene['id']) => void;
-	onSceneDeactivated: (sceneId: ISharedTransitionScene['id']) => void;
 
-	scenes: ISharedTransitionScene[];
-	transitions: ISharedTransition[];
+	scenes: Record<ISharedTransitionScene['id'], ISharedTransitionScene>;
 }
 
 export interface ISharedTransitionSceneContext {
