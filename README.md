@@ -6,9 +6,12 @@ A helper library for [react-native-shared-element](https://github.com/IjzerenHei
 
 # How it works
 
+
 When new scene becomes active, orchestrator will check if there are matching shared elements (by ids) between new scene and previously active scene. For each found element it will create a transition. Additionally the scenes can animate themselves during scene transition (using `sceneInterpolator` prop). When scene is deactivated, orchestrator will try to find the previously active scene, and repeat the same process.
 <br>
 <br>
+
+<img src="./example/example.gif" width="278" height="600" style="margin:30px auto;display:block"/>
 
 ### `SharedTransitionOrchestrator`
 
@@ -38,7 +41,7 @@ Provides context for elements, observes elements changes, optionally animates it
 
 ### `SharedTransitionElement`
 
-Wraps the views you want to animate between scenes.
+Wraps the views you want to apply shared transition to.
 
 | `Props`  |                                                              |
 | -------- | ------------------------------------------------------------ |
@@ -49,7 +52,16 @@ Wraps the views you want to animate between scenes.
 
 # How to use /// WIP
 
+```sh
+npm i react-native-shared-element react-native-shared-element-orchestrator
+
+# if iOS
+
+cd ios
+pod install
 ```
+
+```tsx
 const App = () => {
   ...
   return (
