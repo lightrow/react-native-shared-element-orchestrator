@@ -2,7 +2,7 @@
 
 A helper library for [react-native-shared-element](https://github.com/IjzerenHein/react-native-shared-element). Works as a standalone animator or can be coupled with any navigation library.
 
-![](https://img.shields.io/npm/v/react-native-shared-element-orchestrator?style=for-the-badge)
+[![npm](https://img.shields.io/npm/v/react-native-shared-element-orchestrator?style=for-the-badge)](https://www.npmjs.com/package/react-native-shared-element-orchestrator)
 
 # How it works
 
