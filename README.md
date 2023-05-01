@@ -11,7 +11,8 @@ When new scene becomes active, orchestrator will check if there are matching sha
 <br>
 <br>
 
-<img src="https://github.com/lightrow/react-native-shared-element-orchestrator/raw/main/example/example.gif" width="278" height="600" style="margin:30px auto;display:block"/>
+
+![Example GIF](https://github.com/lightrow/react-native-shared-element-orchestrator/raw/main/example/example.gif)
 
 ### `SharedTransitionOrchestrator`
 
