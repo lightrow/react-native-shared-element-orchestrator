@@ -7,6 +7,7 @@ import React, {
 	useId,
 	useMemo,
 	useRef,
+	useState,
 } from 'react';
 import { Animated, StyleProp, ViewStyle } from 'react-native';
 import { SharedElement, SharedElementNode } from 'react-native-shared-element';
@@ -33,12 +34,29 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		isActive = false,
 		sceneInterpolator,
 	}) => {
+		const id = useId();
 		const ancestorRef = useRef<SharedElementNode | null>(null);
 		const elementsRef = useRef<ISharedTransitionElement[]>([]);
-		const id = useId();
-		const isActiveRef = useUpdatedRef(isActive);
+		const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
 
-		const { onSceneUpdated, onSceneDestroyed, scenes } = useSharedTransition();
+		const {
+			onSceneUpdated,
+			onSceneDestroyed,
+			onSceneActivated,
+			onSceneDeactivated,
+			scenes,
+		} = useSharedTransition();
+
+		const updateScene = useCallback(() => {
+			if (!ancestorRef.current) {
+				return;
+			}
+			onSceneUpdated({
+				ancestor: ancestorRef.current,
+				elements: elementsRef.current,
+				id,
+			} as ISharedTransitionScene);
+		}, []);
 
 		const onElementUpdated = useCallback(
 			(element: ISharedTransitionElement) => {
@@ -77,27 +95,20 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 			[]
 		);
 
-		const updateScene = useCallback(() => {
-			if (!ancestorRef.current) {
-				return;
-			}
-			onSceneUpdated({
-				ancestor: ancestorRef.current,
-				elements: elementsRef.current,
-				isActive: isActiveRef.current,
-				id,
-			} as ISharedTransitionScene);
-		}, []);
-
-		useUpdateEffect(() => {
-			updateScene();
-		}, [isActive]);
-
 		useEffect(() => {
+			setIsReadyToDisplay(true);
 			return () => {
 				onSceneDestroyed(id);
 			};
 		}, []);
+
+		useEffect(() => {
+			if (isActive && isReadyToDisplay) {
+				onSceneActivated(id);
+			} else {
+				onSceneDeactivated(id);
+			}
+		}, [isActive, isReadyToDisplay]);
 
 		const context = useMemo(
 			() => ({ onElementDestroyed, onElementUpdated }),
@@ -105,11 +116,18 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		);
 
 		const animStyle = useMemo(() => {
+			if (!isReadyToDisplay) {
+				// avoids flash of the final state scene before shared transition starts
+				return {
+					opacity: 0,
+				};
+			}
 			const sceneProgress = scenes[id]?.progress;
 			if (sceneInterpolator && sceneProgress) {
 				return sceneInterpolator(sceneProgress);
+			} else {
 			}
-		}, [scenes[id]?.progress, sceneInterpolator]);
+		}, [scenes[id]?.progress, sceneInterpolator, isReadyToDisplay]);
 
 		return (
 			<SharedElement onNode={onAncestorNodeChanged} style={[style]}>

@@ -31,6 +31,8 @@ export interface ISharedTransitionElement {
 export interface ISharedTransitionContext {
 	onSceneUpdated: (scene: ISharedTransitionScene) => void;
 	onSceneDestroyed: (sceneId: ISharedTransitionScene['id']) => void;
+	onSceneActivated: (sceneId: ISharedTransitionScene['id']) => void;
+	onSceneDeactivated: (sceneId: ISharedTransitionScene['id']) => void;
 
 	scenes: Record<ISharedTransitionScene['id'], ISharedTransitionScene>;
 }
