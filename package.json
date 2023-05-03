@@ -1,7 +1,7 @@
 {
 	"peerDependencies": {
-		"react": "^18.2.0",
-		"react-native": "^0.71.7",
+		"react": "*",
+		"react-native": "*",
 		"react-native-shared-element": "^0.8.8"
 	},
 	"devDependencies": {
