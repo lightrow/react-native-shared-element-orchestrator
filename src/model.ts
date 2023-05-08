@@ -1,3 +1,4 @@
+import { RefObject } from 'react';
 import { Animated } from 'react-native';
 import { SharedElementNode } from 'react-native-shared-element';
 
@@ -20,7 +21,6 @@ export interface ISharedTransitionScene {
 	elements: ISharedTransitionElement[];
 	ancestor: SharedElementNode;
 	isActive: boolean;
-	progress: Animated.AnimatedInterpolation<number>;
 }
 
 export interface ISharedTransitionElement {
@@ -35,6 +35,7 @@ export interface ISharedTransitionContext {
 	onSceneDeactivated: (sceneId: ISharedTransitionScene['id']) => void;
 
 	scenes: Record<ISharedTransitionScene['id'], ISharedTransitionScene>;
+	progresses: RefObject<Record<string, Animated.AnimatedInterpolation<number>>>;
 }
 
 export interface ISharedTransitionSceneContext {

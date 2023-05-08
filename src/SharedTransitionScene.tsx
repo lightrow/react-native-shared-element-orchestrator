@@ -9,12 +9,11 @@ import React, {
 	useRef,
 	useState,
 } from 'react';
-import { Animated, StyleProp, ViewStyle } from 'react-native';
+import { Animated, StyleProp, View, ViewStyle } from 'react-native';
 import { SharedElement, SharedElementNode } from 'react-native-shared-element';
-import { ISharedTransitionElement, ISharedTransitionScene } from './model';
 import { useSharedTransition } from './SharedTransitionContext';
 import SharedTransitionSceneContext from './SharedTransitionSceneContext';
-import { useUpdateEffect, useUpdatedRef } from './utils/hooks';
+import { ISharedTransitionElement, ISharedTransitionScene } from './model';
 
 interface ISharedElementSceneProps {
 	children: ReactNode;
@@ -45,6 +44,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 			onSceneActivated,
 			onSceneDeactivated,
 			scenes,
+			progresses,
 		} = useSharedTransition();
 
 		const updateScene = useCallback(() => {
@@ -115,28 +115,29 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 			[onElementDestroyed, onElementUpdated]
 		);
 
-		const animStyle = useMemo(() => {
+		const animStyle = (() => {
 			if (!isReadyToDisplay) {
 				// avoids flash of the final state scene before shared transition starts
 				return {
 					opacity: 0,
 				};
 			}
-			const sceneProgress = scenes[id]?.progress;
+			const sceneProgress = progresses.current?.[id];
 			if (sceneInterpolator && sceneProgress) {
 				return sceneInterpolator(sceneProgress);
-			} else {
 			}
-		}, [scenes[id]?.progress, sceneInterpolator, isReadyToDisplay]);
+		})();
 
 		return (
-			<SharedElement onNode={onAncestorNodeChanged} style={[style]}>
-				<Animated.View style={[animStyle, containerStyle]}>
-					<SharedTransitionSceneContext.Provider value={context}>
-						{children}
-					</SharedTransitionSceneContext.Provider>
-				</Animated.View>
-			</SharedElement>
+			<Animated.View style={[style, animStyle]}>
+				<SharedElement onNode={onAncestorNodeChanged} style={style}>
+					<View style={containerStyle}>
+						<SharedTransitionSceneContext.Provider value={context}>
+							{children}
+						</SharedTransitionSceneContext.Provider>
+					</View>
+				</SharedElement>
+			</Animated.View>
 		);
 	}
 );

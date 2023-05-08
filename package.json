@@ -19,6 +19,7 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc --project ./tsconfig.json",
+		"watch": "tsc --watch --project ./tsconfig.json",
 		"pub": "npm version patch && publish --registry http://localhost:4873/"
 	},
 	"repository": {

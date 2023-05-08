@@ -1,5 +1,5 @@
 import { FC, ReactNode, memo, useEffect, useId, useRef } from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
+import { StyleProp, View, ViewStyle } from 'react-native';
 import { SharedElement, SharedElementNode } from 'react-native-shared-element';
 import { useSharedTransitionScene } from './SharedTransitionSceneContext';
 
@@ -40,7 +40,7 @@ const SharedTransitionElement: FC<ISharedTransitionElementProps> = memo(
 		};
 
 		return (
-			<SharedElement onNode={onNodeChanged} style={style}>
+			<SharedElement style={style} onNode={onNodeChanged} id={id}>
 				{children}
 			</SharedElement>
 		);

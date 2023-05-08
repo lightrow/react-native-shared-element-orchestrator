@@ -4,6 +4,7 @@ import React, {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from 'react';
 import {
@@ -36,7 +37,6 @@ export interface ISharedTransitionOrchestratorProps {
 
 interface IState {
 	scenes: Record<ISharedTransitionScene['id'], ISharedTransitionScene>;
-	transitions: ISharedTransition[];
 	activeScenesIds: Array<ISharedTransitionScene['id']>;
 }
 
@@ -47,9 +47,12 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	easing = Easing.out(Easing.exp),
 	useNativeDriver = true,
 }) => {
+	const progresses = useRef<
+		Record<string, Animated.AnimatedInterpolation<number>>
+	>({});
+	const [transitions, setTransitions] = useState<ISharedTransition[]>([]);
 	const [state, setState] = useState<IState>({
 		scenes: {},
-		transitions: [],
 		activeScenesIds: [],
 	});
 
@@ -64,14 +67,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 
 	const onSceneDestroyed = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
-			setState((prevState) => {
-				const state = { ...prevState, scenes: { ...prevState.scenes } };
-				delete state.scenes[sceneId];
-				state.activeScenesIds = state.activeScenesIds.filter(
-					(activeSceneId) => activeSceneId !== sceneId
-				);
-				return state;
-			});
+			// setState((prevState) => {
+			// 	const state = { ...prevState, scenes: { ...prevState.scenes } };
+			// 	delete state.scenes[sceneId];
+			// 	state.activeScenesIds = state.activeScenesIds.filter(
+			// 		(activeSceneId) => activeSceneId !== sceneId
+			// 	);
+			// 	return state;
+			// });
 		},
 		[]
 	);
@@ -107,18 +110,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				};
 
 				if (prevScene) {
-					const { progress, transitions } = runTransitions(
-						prevScene,
-						nextScene
-					);
-					prevScene.progress = Animated.subtract(1, progress);
-					nextScene.progress = progress;
+					const { progress } = runTransitions(prevScene, nextScene);
+					progresses.current[prevScene.id] = Animated.subtract(1, progress);
+					progresses.current[nextScene.id] = progress;
 					state.scenes[prevScene.id] = prevScene;
 					state.scenes[nextScene.id] = nextScene;
-					state.transitions = transitions;
 				} else {
 					const animation = new Animated.Value(0);
-					nextScene.progress = animation;
+					progresses.current[nextScene.id] = animation;
 					state.scenes[sceneId] = nextScene;
 					Animated.timing(animation, {
 						...animationConfig.current,
@@ -151,18 +150,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				};
 
 				if (nextScene) {
-					const { progress, transitions } = runTransitions(
-						prevScene,
-						nextScene
-					);
-					prevScene.progress = Animated.subtract(1, progress);
-					nextScene.progress = progress;
+					const { progress } = runTransitions(prevScene, nextScene);
+					progresses.current[prevScene.id] = Animated.subtract(1, progress);
+					progresses.current[nextScene.id] = progress;
 					state.scenes[prevScene.id] = prevScene;
 					state.scenes[nextScene.id] = nextScene;
-					state.transitions = transitions;
 				} else {
 					const animation = new Animated.Value(1);
-					prevScene.progress = animation;
+					progresses.current[prevScene.id] = animation;
 					state.scenes[prevScene.id] = prevScene;
 					Animated.timing(animation, {
 						...animationConfig.current,
@@ -209,10 +204,12 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				...animationConfig.current,
 			}).start(() => {
 				InteractionManager.clearInteractionHandle(interaction);
-				setState((state) => ({ ...state, transitions: [] }));
+				setTransitions([]);
 			});
 
-			return { transitions, progress };
+			setTransitions(transitions);
+
+			return { progress };
 		},
 		[]
 	);
@@ -224,6 +221,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			onSceneActivated,
 			onSceneDeactivated,
 			scenes: state.scenes,
+			progresses,
 		};
 	}, [
 		onSceneDestroyed,
@@ -236,26 +234,27 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	return (
 		<SharedTransitionContext.Provider value={context}>
 			{children}
-			{!!state.transitions.length &&
-				state.transitions.map((transition) => (
-					<SharedElementTransition
-						style={[styles.container, style]}
-						start={{
-							node: transition.start.node,
-							ancestor: transition.start.ancestor,
-						}}
-						end={{
-							node: transition.end.node,
-							ancestor: transition.end.ancestor,
-						}}
-						position={transition.progress}
-						key={transition.start.sceneId + transition.end.sceneId}
-						animation='move'
-						resize='auto'
-						align='auto'
-					/>
-				))}
-			{!!state.transitions.length && <View style={styles.touchBlocker} />}
+			<View style={styles.container} pointerEvents='none'>
+				{!!transitions.length &&
+					transitions.map((transition, idx) => (
+						<SharedElementTransition
+							style={[styles.container, style]}
+							start={{
+								node: transition.start.node,
+								ancestor: transition.start.ancestor,
+							}}
+							end={{
+								node: transition.end.node,
+								ancestor: transition.end.ancestor,
+							}}
+							position={transition.progress}
+							key={idx}
+							animation='move'
+							resize='auto'
+							align='auto'
+						/>
+					))}
+			</View>
 		</SharedTransitionContext.Provider>
 	);
 };
@@ -266,7 +265,6 @@ const styles = StyleSheet.create({
 		zIndex: 99999999,
 	},
 	// disabling touch on SharedElementTransition or its parent has buggy behaviour when finger is held down
-	touchBlocker: { ...StyleSheet.absoluteFillObject, zIndex: 99999999 },
 });
 
 export default SharedTransitionOrchestrator;
