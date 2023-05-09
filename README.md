@@ -24,6 +24,9 @@ Provides context for scenes, observes scenes changes, renders transitions betwee
 | `duration?`        | _default_ **`500`**<br> Scene transition duration.                               |
 | `easing?`          | _default_ **`Easing.out(Easing.exp)`**<br>Scene transition easing function.      |
 | `useNativeDriver?` | _default_ **`true`**<br> Change to false if your style interpolators require it. |
+| `animation?` | _default_ **`move`**<br> SharedElementAnimation
+| `resize?` | _default_ **`auto`**<br> SharedElementResize |
+| `align?` | _default_ **`auto`**<br> SharedElementAlign |
 
 <br>
 

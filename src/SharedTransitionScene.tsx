@@ -14,6 +14,7 @@ import { SharedElement, SharedElementNode } from 'react-native-shared-element';
 import { useSharedTransition } from './SharedTransitionContext';
 import SharedTransitionSceneContext from './SharedTransitionSceneContext';
 import { ISharedTransitionElement, ISharedTransitionScene } from './model';
+import { useUpdateEffect } from './utils/hooks';
 
 interface ISharedElementSceneProps {
 	children: ReactNode;
@@ -36,15 +37,13 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		const id = useId();
 		const ancestorRef = useRef<SharedElementNode | null>(null);
 		const elementsRef = useRef<ISharedTransitionElement[]>([]);
-		const [isReadyToDisplay, setIsReadyToDisplay] = useState(false);
+		const [progress] = useState(new Animated.Value(0));
 
 		const {
 			onSceneUpdated,
 			onSceneDestroyed,
 			onSceneActivated,
 			onSceneDeactivated,
-			scenes,
-			progresses,
 		} = useSharedTransition();
 
 		const updateScene = useCallback(() => {
@@ -55,7 +54,8 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 				ancestor: ancestorRef.current,
 				elements: elementsRef.current,
 				id,
-			} as ISharedTransitionScene);
+				progress,
+			});
 		}, []);
 
 		const onElementUpdated = useCallback(
@@ -96,35 +96,30 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		);
 
 		useEffect(() => {
-			setIsReadyToDisplay(true);
+			if (isActive) {
+				onSceneActivated(id);
+			}
 			return () => {
 				onSceneDestroyed(id);
 			};
 		}, []);
 
-		useEffect(() => {
-			if (isActive && isReadyToDisplay) {
+		useUpdateEffect(() => {
+			if (isActive) {
 				onSceneActivated(id);
 			} else {
 				onSceneDeactivated(id);
 			}
-		}, [isActive, isReadyToDisplay]);
+		}, [isActive]);
 
 		const context = useMemo(
-			() => ({ onElementDestroyed, onElementUpdated }),
+			() => ({ onElementDestroyed, onElementUpdated, progress }),
 			[onElementDestroyed, onElementUpdated]
 		);
 
 		const animStyle = (() => {
-			if (!isReadyToDisplay) {
-				// avoids flash of the final state scene before shared transition starts
-				return {
-					opacity: 0,
-				};
-			}
-			const sceneProgress = progresses.current?.[id];
-			if (sceneInterpolator && sceneProgress) {
-				return sceneInterpolator(sceneProgress);
+			if (sceneInterpolator) {
+				return sceneInterpolator(progress);
 			}
 		})();
 

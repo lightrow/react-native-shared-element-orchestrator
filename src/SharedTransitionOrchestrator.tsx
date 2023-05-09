@@ -2,7 +2,6 @@ import React, {
 	FC,
 	ReactNode,
 	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -17,7 +16,12 @@ import {
 	View,
 	ViewStyle,
 } from 'react-native';
-import { SharedElementTransition } from 'react-native-shared-element';
+import {
+	SharedElementAlign,
+	SharedElementAnimation,
+	SharedElementResize,
+	SharedElementTransition,
+} from 'react-native-shared-element';
 
 import {
 	ISharedTransition,
@@ -33,6 +37,9 @@ export interface ISharedTransitionOrchestratorProps {
 	duration?: number;
 	easing?: EasingFunction;
 	useNativeDriver?: boolean;
+	animation?: SharedElementAnimation;
+	resize?: SharedElementResize;
+	align?: SharedElementAlign;
 }
 
 interface IState {
@@ -46,15 +53,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	duration = 500,
 	easing = Easing.out(Easing.exp),
 	useNativeDriver = true,
+	...rest
 }) => {
-	const progresses = useRef<
-		Record<string, Animated.AnimatedInterpolation<number>>
-	>({});
 	const [transitions, setTransitions] = useState<ISharedTransition[]>([]);
-	const [state, setState] = useState<IState>({
+
+	const scenesState = useRef<IState>({
 		scenes: {},
 		activeScenesIds: [],
-	});
+	}).current;
 
 	const animationConfig = useUpdatedRef(
 		{
@@ -67,106 +73,60 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 
 	const onSceneDestroyed = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
-			// setState((prevState) => {
-			// 	const state = { ...prevState, scenes: { ...prevState.scenes } };
-			// 	delete state.scenes[sceneId];
-			// 	state.activeScenesIds = state.activeScenesIds.filter(
-			// 		(activeSceneId) => activeSceneId !== sceneId
-			// 	);
-			// 	return state;
-			// });
+			delete scenesState.scenes[sceneId];
+
+			scenesState.activeScenesIds = scenesState.activeScenesIds.filter(
+				(activeSceneId) => activeSceneId !== sceneId
+			);
 		},
 		[]
 	);
 
 	const onSceneUpdated = useCallback((scene: ISharedTransitionScene) => {
-		setState((prevState) => {
-			return {
-				...prevState,
-				scenes: {
-					...prevState.scenes,
-					[scene.id]: {
-						...prevState.scenes[scene.id],
-						...scene,
-					},
-				},
-			};
-		});
+		scenesState.scenes[scene.id] = scene;
 	}, []);
 
 	const onSceneActivated = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
-			setState((prevState) => {
-				const nextScene = prevState.scenes[sceneId];
-				const prevScene =
-					prevState.scenes[
-						prevState.activeScenesIds[prevState.activeScenesIds.length - 1]
-					];
+			const nextScene = scenesState.scenes[sceneId];
+			const prevScene =
+				scenesState.scenes[
+					scenesState.activeScenesIds[scenesState.activeScenesIds.length - 1]
+				];
 
-				const state = {
-					...prevState,
-					scenes: { ...prevState.scenes },
-					activeScenesIds: [...prevState.activeScenesIds, sceneId],
-				};
+			scenesState.activeScenesIds.push(sceneId);
 
-				if (prevScene) {
-					const { progress } = runTransitions(prevScene, nextScene);
-					progresses.current[prevScene.id] = Animated.subtract(1, progress);
-					progresses.current[nextScene.id] = progress;
-					state.scenes[prevScene.id] = prevScene;
-					state.scenes[nextScene.id] = nextScene;
-				} else {
-					const animation = new Animated.Value(0);
-					progresses.current[nextScene.id] = animation;
-					state.scenes[sceneId] = nextScene;
-					Animated.timing(animation, {
-						...animationConfig.current,
-						toValue: 1,
-					}).start();
-				}
-
-				return state;
-			});
+			if (prevScene) {
+				runTransitions(prevScene, nextScene);
+			} else {
+				Animated.timing(nextScene.progress, {
+					...animationConfig.current,
+					toValue: 1,
+				}).start();
+			}
 		},
 		[]
 	);
 
 	const onSceneDeactivated = useCallback(
 		(sceneId: ISharedTransitionScene['id']) => {
-			setState((prevState) => {
-				const prevScene = prevState.scenes[sceneId];
-				const prevSceneIdx = prevState.activeScenesIds.findIndex(
-					(id) => id === sceneId
-				);
-				const nextScene =
-					prevState.scenes[prevState.activeScenesIds[prevSceneIdx - 1]];
+			const prevScene = scenesState.scenes[sceneId];
+			const prevSceneIdx = scenesState.activeScenesIds.findIndex(
+				(id) => id === sceneId
+			);
+			const nextScene =
+				scenesState.scenes[scenesState.activeScenesIds[prevSceneIdx - 1]];
 
-				const state = {
-					...prevState,
-					scenes: { ...prevState.scenes },
-					activeScenesIds: prevState.activeScenesIds.filter(
-						(activeSceneId) => activeSceneId !== sceneId
-					),
-				};
+			scenesState.activeScenesIds.splice(prevSceneIdx, 1);
 
-				if (nextScene) {
-					const { progress } = runTransitions(prevScene, nextScene);
-					progresses.current[prevScene.id] = Animated.subtract(1, progress);
-					progresses.current[nextScene.id] = progress;
-					state.scenes[prevScene.id] = prevScene;
-					state.scenes[nextScene.id] = nextScene;
-				} else {
-					const animation = new Animated.Value(1);
-					progresses.current[prevScene.id] = animation;
-					state.scenes[prevScene.id] = prevScene;
-					Animated.timing(animation, {
-						...animationConfig.current,
-						toValue: 0,
-					}).start();
-				}
-
-				return state;
-			});
+			if (nextScene) {
+				runTransitions(prevScene, nextScene);
+			} else {
+				Animated.timing(prevScene.progress, {
+					...animationConfig.current,
+					toValue: 0,
+				}).start();
+			}
 		},
 		[]
 	);
@@ -174,8 +134,6 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 	const runTransitions = useCallback(
 		(prevScene: ISharedTransitionScene, nextScene: ISharedTransitionScene) => {
 			const transitions: ISharedTransition[] = [];
-
-			const progress = new Animated.Value(0);
 
 			prevScene.elements.forEach((prevSceneElement) => {
 				const nextSceneMatchingElement = nextScene.elements.find(
@@ -193,13 +151,18 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 							node: nextSceneMatchingElement.node,
 							sceneId: nextScene.id,
 						},
-						progress,
+						progress: nextScene.progress,
 					});
 				}
 			});
 
 			const interaction = InteractionManager.createInteractionHandle();
-			Animated.timing(progress, {
+
+			Animated.timing(prevScene.progress, {
+				toValue: 0,
+				...animationConfig.current,
+			}).start();
+			Animated.timing(nextScene.progress, {
 				toValue: 1,
 				...animationConfig.current,
 			}).start(() => {
@@ -208,8 +171,6 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			});
 
 			setTransitions(transitions);
-
-			return { progress };
 		},
 		[]
 	);
@@ -220,25 +181,17 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			onSceneUpdated,
 			onSceneActivated,
 			onSceneDeactivated,
-			scenes: state.scenes,
-			progresses,
 		};
-	}, [
-		onSceneDestroyed,
-		onSceneUpdated,
-		onSceneActivated,
-		onSceneDeactivated,
-		state.scenes,
-	]);
-
+	}, [onSceneDestroyed, onSceneUpdated, onSceneActivated, onSceneDeactivated]);
+ 
 	return (
 		<SharedTransitionContext.Provider value={context}>
 			{children}
-			<View style={styles.container} pointerEvents='none'>
+			<View style={[styles.container, style]} pointerEvents='box-none'>
 				{!!transitions.length &&
 					transitions.map((transition, idx) => (
 						<SharedElementTransition
-							style={[styles.container, style]}
+							style={styles.container}
 							start={{
 								node: transition.start.node,
 								ancestor: transition.start.ancestor,
@@ -252,8 +205,10 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 							animation='move'
 							resize='auto'
 							align='auto'
+							{...rest}
 						/>
 					))}
+				{!!transitions.length && <View style={styles.container} />}
 			</View>
 		</SharedTransitionContext.Provider>
 	);
@@ -264,7 +219,6 @@ const styles = StyleSheet.create({
 		...StyleSheet.absoluteFillObject,
 		zIndex: 99999999,
 	},
-	// disabling touch on SharedElementTransition or its parent has buggy behaviour when finger is held down
 });
 
 export default SharedTransitionOrchestrator;
