@@ -13,6 +13,7 @@ export interface ISharedTransition {
 		sceneId: ISharedTransitionScene['id'];
 	};
 	progress: Animated.AnimatedInterpolation<number>;
+	zIndex: number;
 }
 
 export interface ISharedTransitionScene {
@@ -25,6 +26,7 @@ export interface ISharedTransitionScene {
 export interface ISharedTransitionElement {
 	id: string;
 	node: SharedElementNode;
+	zIndex: number;
 }
 
 export interface ISharedTransitionContext {

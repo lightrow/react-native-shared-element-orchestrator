@@ -34,8 +34,6 @@ const GalleryViewer: FC<IGalleryViewerProps> = ({ state, setState }) => {
 		state.images.findIndex((i) => i === state.selectedImage)
 	);
 
-	console.log(startingIndex);
-
 	const offsetX = useSharedValue(0);
 	const offsetY = useSharedValue(0);
 

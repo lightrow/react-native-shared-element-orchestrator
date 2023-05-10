@@ -7,10 +7,11 @@ interface ISharedTransitionElementProps {
 	children: ReactNode;
 	id: string;
 	style?: StyleProp<ViewStyle>;
+	zIndex?: number;
 }
 
 const SharedTransitionElement: FC<ISharedTransitionElementProps> = memo(
-	({ children, id, style }) => {
+	({ children, id, style, zIndex = 0 }) => {
 		const { onElementDestroyed, onElementUpdated } = useSharedTransitionScene();
 		const nodeRef = useRef<SharedElementNode | null>(null);
 
@@ -21,11 +22,12 @@ const SharedTransitionElement: FC<ISharedTransitionElementProps> = memo(
 			onElementUpdated({
 				id,
 				node: nodeRef.current,
+				zIndex,
 			});
 			return () => {
 				onElementDestroyed(id);
 			};
-		}, [id]);
+		}, [id, zIndex]);
 
 		const onNodeChanged = (node: SharedElementNode | null) => {
 			if (!node) {
@@ -35,6 +37,7 @@ const SharedTransitionElement: FC<ISharedTransitionElementProps> = memo(
 				onElementUpdated({
 					id,
 					node,
+					zIndex,
 				});
 			}
 		};

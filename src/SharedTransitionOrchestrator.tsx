@@ -152,6 +152,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 							sceneId: nextScene.id,
 						},
 						progress: nextScene.progress,
+						zIndex: nextSceneMatchingElement.zIndex,
 					});
 				}
 			});
@@ -191,7 +192,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				{!!transitions.length &&
 					transitions.map((transition, idx) => (
 						<SharedElementTransition
-							style={styles.container}
+							style={[styles.container, { zIndex: transition.zIndex }]}
 							start={{
 								node: transition.start.node,
 								ancestor: transition.start.ancestor,

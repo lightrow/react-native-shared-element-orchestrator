@@ -50,6 +50,7 @@ Wraps the views you want to apply shared transition to.
 | -------- | ------------------------------------------------------------ |
 | `id`     | _required_ <br> ID used for matching Elements between Scenes |
 | `style?` | _default_ **`undefined`**<br> View style.                    |
+| `zIndex?`| _default_ **`0`**<br>zIndex of transition that will run for this element. Used for controlling how transitions overlay each other, e.g. when Image has an Icon on top of it, both would be wrapped with different `SharedTransitionElements` with Icon having a higher zIndex   |
 
 <br>
 
