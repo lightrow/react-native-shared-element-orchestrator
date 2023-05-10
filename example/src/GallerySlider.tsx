@@ -1,6 +1,5 @@
 import React, { Dispatch, FC, SetStateAction } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { FlatList, Image, StyleSheet } from 'react-native';
 import {
 	SharedTransitionElement,
 	SharedTransitionScene,
@@ -18,39 +17,37 @@ const GallerySlider: FC<IGallerySliderProps> = ({ setState, state }) => {
 		<SharedTransitionScene
 			style={styles.container}
 			containerStyle={styles.container}
-			sceneInterpolator={(progress) => ({
-				transform: [
-					{
-						scale: progress.interpolate({
-							inputRange: [0, 1],
-							outputRange: [1.5, 1],
-						}),
-					},
-				],
-			})}
 			isActive
 		>
-			<ScrollView
+			<FlatList
+				data={state.images}
+				numColumns={2}
+				getItemLayout={(item, index) => ({
+					index,
+					length: 200,
+					offset: 200 * index,
+				})}
+				renderItem={({ item: img }) => {
+					return (
+						<Touchable
+							style={styles.button}
+							onPress={() => setState((s) => ({ ...s, selectedImage: img }))}
+						>
+							<SharedTransitionElement style={styles.imgContainer} id={img}>
+								<Image
+									key={'img' + img}
+									style={styles.img}
+									source={{ uri: img, cache: 'force-cache' }}
+									resizeMode='cover'
+									borderRadius={15}
+								/>
+							</SharedTransitionElement>
+						</Touchable>
+					);
+				}}
 				style={styles.scroll}
 				contentContainerStyle={styles.scrollContainer}
-			>
-				{state.images.map((img) => (
-					<Touchable
-						key={img}
-						style={styles.button}
-						onPress={() => setState((s) => ({ ...s, selectedImage: img }))}
-					>
-						<SharedTransitionElement style={styles.imgContainer} id={img}>
-							<Image
-								key={'img' + img}
-								style={styles.img}
-								source={{ uri: img, cache: 'force-cache' }}
-								resizeMode='cover'
-							/>
-						</SharedTransitionElement>
-					</Touchable>
-				))}
-			</ScrollView>
+			></FlatList>
 		</SharedTransitionScene>
 	);
 };
@@ -59,11 +56,8 @@ export default GallerySlider;
 
 const styles = StyleSheet.create({
 	container: { flex: 1 },
-	scroll: { flex: 1, backgroundColor: '#eee' },
+	scroll: { flex: 1, backgroundColor: '#eee', width: '100%' },
 	scrollContainer: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		width: '100%',
 		padding: 5,
 	},
 	button: { width: '50%', height: 200, padding: 5 },
@@ -71,6 +65,5 @@ const styles = StyleSheet.create({
 	img: {
 		width: '100%',
 		height: '100%',
-		borderRadius: 20,
 	},
 });

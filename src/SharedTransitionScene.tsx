@@ -15,6 +15,7 @@ import { useSharedTransition } from './SharedTransitionContext';
 import SharedTransitionSceneContext from './SharedTransitionSceneContext';
 import { ISharedTransitionElement, ISharedTransitionScene } from './model';
 import { useUpdateEffect } from './utils/hooks';
+import debounce from './utils/debounce';
 
 interface ISharedElementSceneProps {
 	children: ReactNode;
@@ -24,6 +25,7 @@ interface ISharedElementSceneProps {
 	sceneInterpolator?: (
 		progress: Animated.AnimatedInterpolation<number>
 	) => Animated.AnimatedProps<ViewStyle>;
+	mountActivationDebounce?: number;
 }
 
 const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
@@ -33,11 +35,13 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		containerStyle,
 		isActive = false,
 		sceneInterpolator,
+		mountActivationDebounce = 100,
 	}) => {
 		const id = useId();
 		const ancestorRef = useRef<SharedElementNode | null>(null);
 		const elementsRef = useRef<ISharedTransitionElement[]>([]);
 		const [progress] = useState(new Animated.Value(0));
+		const [readyToActivate, setReadyToActivate] = useState(false);
 
 		const {
 			onSceneUpdated,
@@ -45,6 +49,13 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 			onSceneActivated,
 			onSceneDeactivated,
 		} = useSharedTransition();
+
+		const flipReadyToActivate = useCallback(
+			debounce(() => {
+				setReadyToActivate(true);
+			}, mountActivationDebounce),
+			[mountActivationDebounce]
+		);
 
 		const updateScene = useCallback(() => {
 			if (!ancestorRef.current) {
@@ -56,6 +67,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 				id,
 				progress,
 			});
+			flipReadyToActivate();
 		}, []);
 
 		const onElementUpdated = useCallback(
@@ -96,21 +108,22 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		);
 
 		useEffect(() => {
-			if (isActive) {
-				onSceneActivated(id);
-			}
 			return () => {
 				onSceneDestroyed(id);
 			};
 		}, []);
 
 		useUpdateEffect(() => {
-			if (isActive) {
-				onSceneActivated(id);
-			} else {
+			if (!isActive) {
 				onSceneDeactivated(id);
 			}
 		}, [isActive]);
+
+		useUpdateEffect(() => {
+			if (isActive && readyToActivate) {
+				onSceneActivated(id);
+			}
+		}, [isActive, readyToActivate]);
 
 		const context = useMemo(
 			() => ({ onElementDestroyed, onElementUpdated, progress }),
@@ -118,6 +131,11 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		);
 
 		const animStyle = (() => {
+			if (!readyToActivate) {
+				return {
+					opacity: 0,
+				};
+			}
 			if (sceneInterpolator) {
 				return sceneInterpolator(progress);
 			}

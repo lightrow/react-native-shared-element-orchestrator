@@ -183,7 +183,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			onSceneDeactivated,
 		};
 	}, [onSceneDestroyed, onSceneUpdated, onSceneActivated, onSceneDeactivated]);
- 
+
 	return (
 		<SharedTransitionContext.Provider value={context}>
 			{children}

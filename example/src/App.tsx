@@ -1,54 +1,56 @@
-import React, {useEffect, useState} from 'react';
-import {SafeAreaView, StyleSheet} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
 import GallerySlider from './GallerySlider';
 import GalleryViewer from './GalleryViewer';
-import {SharedTransitionOrchestrator} from 'react-native-shared-element-orchestrator';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import { SharedTransitionOrchestrator } from 'react-native-shared-element-orchestrator';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export interface IState {
-  images: string[];
-  selectedImage: string | null;
+	images: string[];
+	selectedImage: string | null;
 }
 
 function App(): JSX.Element {
-  const [state, setState] = useState<IState>({
-    images: [],
-    selectedImage: null,
-  });
+	const [state, setState] = useState<IState>({
+		images: [],
+		selectedImage: null,
+	});
 
-  const getImages = async () => {
-    const resp = await fetch('https://nekos.best/api/v2/kitsune?amount=15', {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-    const data = (await resp.json()) as any;
-    setState(s => ({...s, images: data.results.map(r => r.url)}));
-  };
+	const getImages = async () => {
+		const resp = await fetch('https://api.waifu.pics/many/sfw/awoo', {
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-type': 'application/json',
+			},
+			body: JSON.stringify({}),
+		}).then((r) => r.json());
 
-  useEffect(() => {
-    getImages();
-  }, []);
+		setState((s) => ({ ...s, images: resp.files }));
+	};
 
-  return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaView style={styles.container}>
-        <SharedTransitionOrchestrator style={styles.container}>
-          <GallerySlider state={state} setState={setState} />
-          {state.selectedImage && (
-            <GalleryViewer state={state} setState={setState} />
-          )}
-        </SharedTransitionOrchestrator>
-      </SafeAreaView>
-    </GestureHandlerRootView>
-  );
+	useEffect(() => {
+		getImages();
+	}, []);
+
+	return (
+		<GestureHandlerRootView style={styles.container}>
+			<SafeAreaView style={styles.container}>
+				<SharedTransitionOrchestrator style={styles.container}>
+					<GallerySlider state={state} setState={setState} />
+					{state.selectedImage && (
+						<GalleryViewer state={state} setState={setState} />
+					)}
+				</SharedTransitionOrchestrator>
+			</SafeAreaView>
+		</GestureHandlerRootView>
+	);
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+	container: {
+		flex: 1,
+	},
 });
 
 export default App;

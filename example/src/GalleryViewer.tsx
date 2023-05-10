@@ -1,20 +1,15 @@
-import React, { Dispatch, FC, SetStateAction, useRef, useState } from 'react';
+import React, { Dispatch, FC, SetStateAction, useState } from 'react';
 import {
 	Dimensions,
+	FlatList,
 	Image,
 	NativeScrollEvent,
 	NativeSyntheticEvent,
 	StyleSheet,
 } from 'react-native';
-import FastImage from 'react-native-fast-image';
-import {
-	Gesture,
-	GestureDetector,
-	ScrollView,
-} from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
 	interpolate,
-	interpolateColor,
 	runOnJS,
 	useAnimatedStyle,
 	useSharedValue,
@@ -35,9 +30,11 @@ const GalleryViewer: FC<IGalleryViewerProps> = ({ state, setState }) => {
 	const windowWidth = Dimensions.get('window').width;
 
 	const [shouldDismiss, setShouldDismiss] = useState(false);
-	const [startingOffset] = useState(
-		state.images.findIndex((i) => i === state.selectedImage) * windowWidth
+	const [startingIndex] = useState(
+		state.images.findIndex((i) => i === state.selectedImage)
 	);
+
+	console.log(startingIndex);
 
 	const offsetX = useSharedValue(0);
 	const offsetY = useSharedValue(0);
@@ -103,34 +100,36 @@ const GalleryViewer: FC<IGalleryViewerProps> = ({ state, setState }) => {
 		>
 			<GestureDetector gesture={gesture}>
 				<Animated.View style={[animStyle, { height: '100%', width: '100%' }]}>
-					<ScrollView
-						contentOffset={{
-							x: startingOffset,
-							y: 0,
+					<FlatList
+						initialScrollIndex={startingIndex}
+						getItemLayout={(_, index) => ({
+							index,
+							length: windowWidth,
+							offset: windowWidth * index,
+						})}
+						windowSize={2}
+						initialNumToRender={2}
+						data={state.images}
+						extraData={state.selectedImage}
+						renderItem={({ item: img }) => {
+							return (
+								<SharedTransitionElement
+									id={img === state.selectedImage ? img : 'dummy'}
+									style={styles.imgContainer}
+								>
+									<Image
+										source={{ uri: img, cache: 'force-cache' }}
+										style={styles.img}
+										resizeMode='contain'
+									/>
+								</SharedTransitionElement>
+							);
 						}}
 						scrollEventThrottle={8}
 						onScroll={updateSelected}
-						style={styles.scroll}
-						contentContainerStyle={styles.scrollContainer}
 						pagingEnabled
 						horizontal
-					>
-						{state.images.map((img, idx) => (
-							<SharedTransitionElement
-								key={img}
-								id={img === state.selectedImage ? img : 'dummy'}
-								style={styles.imgContainer}
-							>
-								<Image
-									key={'img' + img}
-									onLoadEnd={() => console.log('loaded', idx)}
-									source={{ uri: img, cache: 'force-cache' }}
-									style={styles.img}
-									resizeMode='contain'
-								/>
-							</SharedTransitionElement>
-						))}
-					</ScrollView>
+					/>
 				</Animated.View>
 			</GestureDetector>
 		</SharedTransitionScene>
