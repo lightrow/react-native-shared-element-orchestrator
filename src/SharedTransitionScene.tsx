@@ -26,6 +26,7 @@ interface ISharedElementSceneProps {
 		progress: Animated.AnimatedInterpolation<number>
 	) => Animated.AnimatedProps<ViewStyle>;
 	mountActivationDebounce?: number;
+	onTransitionEnd?: () => void;
 }
 
 const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
@@ -36,6 +37,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 		isActive = false,
 		sceneInterpolator,
 		mountActivationDebounce = 100,
+		onTransitionEnd,
 	}) => {
 		const id = useId();
 		const ancestorRef = useRef<SharedElementNode | null>(null);
@@ -66,9 +68,10 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 				elements: elementsRef.current,
 				id,
 				progress,
+				onTransitionEnd,
 			});
 			flipReadyToActivate();
-		}, []);
+		}, [onTransitionEnd]);
 
 		const onElementUpdated = useCallback(
 			(element: ISharedTransitionElement) => {
@@ -82,7 +85,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 				}
 				updateScene();
 			},
-			[]
+			[updateScene]
 		);
 
 		const onElementDestroyed = useCallback(
@@ -96,7 +99,7 @@ const SharedTransitionScene: FC<ISharedElementSceneProps> = memo(
 				elementsRef.current.splice(elementIdx, 1);
 				updateScene();
 			},
-			[]
+			[updateScene]
 		);
 
 		const onAncestorNodeChanged = useCallback(

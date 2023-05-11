@@ -99,10 +99,14 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			if (prevScene) {
 				runTransitions(prevScene, nextScene);
 			} else {
+				const interaction = InteractionManager.createInteractionHandle();
 				Animated.timing(nextScene.progress, {
 					...animationConfig.current,
 					toValue: 1,
-				}).start();
+				}).start(() => {
+					InteractionManager.clearInteractionHandle(interaction);
+					nextScene.onTransitionEnd?.();
+				});
 			}
 		},
 		[]
@@ -122,10 +126,13 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			if (nextScene) {
 				runTransitions(prevScene, nextScene);
 			} else {
+				const interaction = InteractionManager.createInteractionHandle();
 				Animated.timing(prevScene.progress, {
 					...animationConfig.current,
 					toValue: 0,
-				}).start();
+				}).start(() => {
+					InteractionManager.clearInteractionHandle(interaction);
+				});
 			}
 		},
 		[]
@@ -158,7 +165,6 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 			});
 
 			const interaction = InteractionManager.createInteractionHandle();
-
 			Animated.timing(prevScene.progress, {
 				toValue: 0,
 				...animationConfig.current,
@@ -167,6 +173,7 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 				toValue: 1,
 				...animationConfig.current,
 			}).start(() => {
+				nextScene.onTransitionEnd?.();
 				InteractionManager.clearInteractionHandle(interaction);
 				setTransitions([]);
 			});

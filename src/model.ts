@@ -21,6 +21,7 @@ export interface ISharedTransitionScene {
 	elements: ISharedTransitionElement[];
 	ancestor: SharedElementNode;
 	progress: Animated.Value;
+	onTransitionEnd?: () => void;
 }
 
 export interface ISharedTransitionElement {
