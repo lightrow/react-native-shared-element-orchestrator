@@ -58,7 +58,7 @@ Wraps the views you want to apply shared transition to.
 # How to use /// WIP
 
 ```sh
-npm i react-native-shared-element react-native-shared-element-orchestrator
+npm i react-native-shared-element react-native-shared-element-orchestrator react-native-screens
 
 # if iOS
 
