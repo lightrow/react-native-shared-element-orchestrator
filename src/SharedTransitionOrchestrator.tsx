@@ -1,5 +1,6 @@
 import React, {
 	FC,
+	PropsWithChildren,
 	ReactNode,
 	useCallback,
 	useMemo,
@@ -11,6 +12,7 @@ import {
 	Easing,
 	EasingFunction,
 	InteractionManager,
+	Platform,
 	StyleProp,
 	StyleSheet,
 	View,
@@ -30,7 +32,7 @@ import {
 } from './model';
 import SharedTransitionContext from './SharedTransitionContext';
 import { useUpdatedRef } from './utils/hooks';
-
+import { FullWindowOverlay } from 'react-native-screens';
 export interface ISharedTransitionOrchestratorProps {
 	children: ReactNode;
 	style?: StyleProp<ViewStyle>;
@@ -196,30 +198,41 @@ const SharedTransitionOrchestrator: FC<ISharedTransitionOrchestratorProps> = ({
 		<SharedTransitionContext.Provider value={context}>
 			{children}
 			<View style={[styles.container, style]} pointerEvents='box-none'>
-				{!!transitions.length &&
-					transitions.map((transition, idx) => (
-						<SharedElementTransition
-							style={[styles.container, { zIndex: transition.zIndex }]}
-							start={{
-								node: transition.start.node,
-								ancestor: transition.start.ancestor,
-							}}
-							end={{
-								node: transition.end.node,
-								ancestor: transition.end.ancestor,
-							}}
-							position={transition.progress}
-							key={idx}
-							animation='move'
-							resize='auto'
-							align='auto'
-							{...rest}
-						/>
-					))}
+				{!!transitions.length && (
+					<MaybeFullWindowOverlay>
+						{transitions.map((transition, idx) => (
+							<SharedElementTransition
+								style={[styles.container, { zIndex: transition.zIndex }]}
+								start={{
+									node: transition.start.node,
+									ancestor: transition.start.ancestor,
+								}}
+								end={{
+									node: transition.end.node,
+									ancestor: transition.end.ancestor,
+								}}
+								position={transition.progress}
+								key={idx}
+								animation='move'
+								resize='auto'
+								align='auto'
+								{...rest}
+							/>
+						))}
+					</MaybeFullWindowOverlay>
+				)}
 				{!!transitions.length && <View style={styles.container} />}
 			</View>
 		</SharedTransitionContext.Provider>
 	);
+};
+
+const MaybeFullWindowOverlay: FC<PropsWithChildren> = ({ children }) => {
+	if (Platform.OS === 'ios') {
+		return <FullWindowOverlay>{children}</FullWindowOverlay>;
+	}
+
+	return <>{children}</>;
 };
 
 const styles = StyleSheet.create({
