@@ -12,7 +12,7 @@
 	},
 	"name": "react-native-shared-element-orchestrator",
 	"description": "A helper library for react-native-shared-element. Works as a standalone animator or can be coupled with any navigation library.",
-	"version": "1.1.5",
+	"version": "1.1.6",
 	"main": "build/index.js",
 	"files": [
 		"build/**/*"
