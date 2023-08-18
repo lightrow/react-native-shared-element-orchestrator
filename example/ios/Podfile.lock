@@ -455,6 +455,9 @@ PODS:
     - React-RCTText
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNScreens (3.24.0):
+    - React-Core
+    - React-RCTImage
   - RNSharedElement (0.8.8):
     - React-Core
   - SDWebImage (5.11.1):
@@ -530,6 +533,7 @@ DEPENDENCIES:
   - RNFastImage (from `../node_modules/react-native-fast-image`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
+  - RNScreens (from `../node_modules/react-native-screens`)
   - RNSharedElement (from `../node_modules/react-native-shared-element`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -627,6 +631,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
+  RNScreens:
+    :path: "../node_modules/react-native-screens"
   RNSharedElement:
     :path: "../node_modules/react-native-shared-element"
   Yoga:
@@ -683,6 +689,7 @@ SPEC CHECKSUMS:
   RNFastImage: 5c9c9fed9c076e521b3f509fe79e790418a544e8
   RNGestureHandler: 071d7a9ad81e8b83fe7663b303d132406a7d8f39
   RNReanimated: b1220a0e5168745283ff5d53bfc7d2144b2cee1b
+  RNScreens: b21dc57dfa2b710c30ec600786a3fc223b1b92e7
   RNSharedElement: 504fa28a235b12505b6daedbb452a9ec96809bd0
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
